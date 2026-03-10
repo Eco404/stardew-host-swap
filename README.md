@@ -82,13 +82,13 @@ python main.py "\path\to\name_123456789" --list
 
 ### 3. 预检查（推荐先执行）
 
-按角色名选择：
+按角色名选择（`NAME`是需要与当前主机交换数据的客机玩家名称）：
 
 ```bash
-python main.py "\path\to\name_123456789" --target-name username --report
+python main.py "\path\to\name_123456789" --target-name NAME --report
 ```
 
-或按 `UniqueMultiplayerID` 选择：
+或按 `UniqueMultiplayerID` 选择（`ID`是需要与当前主机交换数据的客机玩家ID）：
 
 ```bash
 python main.py "\path\to\name_123456789" --target-id ID --report
@@ -99,14 +99,15 @@ python main.py "\path\to\name_123456789" --target-id ID --report
 ### 4. 实际执行交换
 
 ```bash
-python main.py "\path\to\name_123456789" --target-name username
+python main.py "\path\to\name_123456789" --target-name NAME
 ```
 
 执行该命令后会：
 
-- 先备份原主存档为：`原文件名_bak`
-- 如果存在 `SaveGameInfo`，先备份为：`SaveGameInfo_bak`
-- 然后将修改后的内容直接写回原文件
+- 备份原主存档为：`原文件名_bak`
+- 备份`SaveGameInfo`为：`SaveGameInfo_bak`
+- 将`NAME`客机玩家的数据与主机玩家的数据进行交换
+- 将修改后的内容写回原存档文件
 
 ---
 

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stardew-host-swap"
+version = "0.1.0"
+description = "Swap Stardew Valley multiplayer host and farmhand save data."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+  {name = "Eco404"}
+]
+
+[project.scripts]
+stardew-host-swap = "stardew_host_swap.cli:main"
+
+[tool.setuptools]
+packages = ["stardew_host_swap"]

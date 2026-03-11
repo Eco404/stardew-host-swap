@@ -25,7 +25,7 @@
 - `mailReceived` 导致的进度缺失
 - `homeLocation` 未修正导致联机角色列表不显示
 - `userID` 绑定问题
-- `farmhandReference`、`owner`、`ownerID` 等归属引用未同步
+- `farmhandReference` 归属引用未同步
 
 这个项目就是为了解决这些问题而写的。
 
@@ -42,8 +42,6 @@
 - 修复 `userID`
 - 修复部分基于 `UniqueMultiplayerID` 的归属字段：
   - `farmhandReference`
-  - `owner`
-  - `ownerID`
 - 支持 **预检查 / 报告模式**
 - 支持直接传入 **存档文件夹路径**
 - 支持 **原地修改原存档文件**
@@ -130,8 +128,6 @@ python main.py "\path\to\name_123456789" --target-name NAME
 
 4. 同步修复部分归属引用：
    - `farmhandReference`
-   - `owner`
-   - `ownerID`
 
 5. 将交换后的 `player` 内容同步写入 `SaveGameInfo/Farmer`
 
@@ -167,7 +163,7 @@ python main.py "\path\to\name_123456789" --target-name NAME
 当前采用的是“保主机进度优先”的策略：
 
 - 新主机：`原客机 mailReceived ∪ 原主机 mailReceived`
-- 新客机：恢复为原客机自己的 `mailReceived`
+- 新客机：保留原主机的 `mailReceived`
 
 这样做是因为主机的 `mailReceived` 中存有全局进度标志，尽量避免主机切换后丢失全局进度标志。
 
@@ -193,13 +189,11 @@ python main.py "\path\to\name_123456789" --target-name NAME
 - 新主机：`userID = 空`
 - 新客机：恢复为目标客机交换前的 `userID`
 
-### 6. farmhandReference / owner / ownerID 的处理方式
+### 6. farmhandReference 的处理方式
 
 当前版本会对以下标签做双向 ID 替换：
 
 - `farmhandReference`
-- `owner`
-- `ownerID`
 
 逐个命中标签值，按原值判断：
 
@@ -234,7 +228,6 @@ python main.py "\path\to\name_123456789" --target-name NAME
 如果你的存档使用了大量模组，可能还会存在：
 
 - 自定义字段未同步
-- 模组附加 owner 字段未修复
 - 额外 world/player 绑定未覆盖
 
 ### 3. 并非所有问题都已完全解决

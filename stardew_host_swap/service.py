@@ -67,7 +67,7 @@ def perform_swap(
     swapped_farmer_inner = swapped_xml[farmer_open_end:farmer_close_start]
 
     fixed_player_inner = set_mailreceived_on_wrapped_inner(swapped_player_inner, merged_host_mail)
-    fixed_farmer_inner = set_mailreceived_on_wrapped_inner(swapped_farmer_inner, old_guest_mail)
+    fixed_farmer_inner = set_mailreceived_on_wrapped_inner(swapped_farmer_inner, old_host_mail)
 
     fixed_player_inner = set_single_simple_tag_on_wrapped_inner(fixed_player_inner, "homeLocation", "FarmHouse")
     fixed_farmer_inner = set_single_simple_tag_on_wrapped_inner(fixed_farmer_inner, "homeLocation", old_guest_home)
@@ -78,7 +78,7 @@ def perform_swap(
     swapped_xml = replace_player_and_farmer_inners(swapped_xml, target_index, fixed_player_inner, fixed_farmer_inner)
     swapped_xml, ref_counts = swap_simple_tag_values_by_ids(
         swapped_xml,
-        ["farmhandReference", "owner", "ownerID"],
+        ["farmhandReference"],
         old_host_id,
         old_guest_id,
     )
@@ -115,7 +115,7 @@ def perform_swap(
     print(f"  homeLocation: new host -> {text(new_player.find('homeLocation'))!r} ; new guest -> {text(new_guest.find('homeLocation'))!r}")
     print(f"  userID:       new host -> {text(new_player.find('userID'))!r} ; new guest -> {text(new_guest.find('userID'))!r}")
     print(f"  mailReceived: new host {len(old_guest_mail)} -> {len(new_player_mail)} ; new guest restored to {len(new_guest_mail)}")
-    print(f"  ID refs:      farmhandReference={ref_counts['farmhandReference']} ; owner={ref_counts['owner']} ; ownerID={ref_counts['ownerID']}")
+    print(f"  ID refs:      farmhandReference={ref_counts['farmhandReference']}")
     print(f"  Main save backup: {main_backup}")
     print(f"  Main save written in-place: {output_main_path}")
     if savegameinfo_written is not None:

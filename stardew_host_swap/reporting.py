@@ -58,12 +58,12 @@ def generate_report(
     swapped_preview = swap_player_and_farmer_raw(raw_xml, idx)
     _, ref_counts = swap_simple_tag_values_by_ids(
         swapped_preview,
-        ["farmhandReference", "owner", "ownerID"],
+        ["farmhandReference"],
         text(player.find("UniqueMultiplayerID")),
         text(target_fh.find("UniqueMultiplayerID")),
     )
 
-    lines.append("  Additional fixes: mailReceived, homeLocation, userID, farmhandReference, owner, ownerID.")
+    lines.append("  Additional fixes: mailReceived, homeLocation, userID, farmhandReference.")
     lines.append(f"    New host homeLocation: {guest_home!r} -> 'FarmHouse'")
     lines.append(f"    New guest homeLocation: {host_home!r} -> {guest_home!r}")
     lines.append(f"    New host userID: {guest_userid!r} -> ''")
@@ -71,7 +71,7 @@ def generate_report(
     lines.append(f"    New host mailReceived: {len(guest_mail)} -> {len(merged_mail)} (guest ∪ host)")
     lines.append(f"    New guest mailReceived: restored to original guest count {len(guest_mail)}")
     lines.append(
-        f"    ID reference swaps: farmhandReference={ref_counts['farmhandReference']}, owner={ref_counts['owner']}, ownerID={ref_counts['ownerID']}"
+        f"    ID reference swaps: farmhandReference={ref_counts['farmhandReference']}"
     )
     lines.append("  Backups to be created before overwrite:")
     lines.append(f"    Main save backup: {main_save_path.name}_bak")

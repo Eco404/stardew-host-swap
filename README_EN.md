@@ -113,11 +113,6 @@ The GUI currently provides these toggleable options:
 - `userID` fix
 - `SaveGameInfo` sync
 
-Notes:
-
-- The `indoors` fix is now fully connected to actual logic and is enabled by default
-- The right-side output panel shows a summary of the currently enabled functions for easier verification
-
 #### 5. Run a preview
 
 Click **Preview** to display:
@@ -302,7 +297,7 @@ Recommended GUI workflow:
 1. Start `gui_main.py`
 2. Import the save folder using the button or by dragging it into the window
 3. Select the farmhand character you want to swap in the left-side list
-4. Confirm that the option checkboxes match what you want, especially whether `indoors` fix should be enabled
+4. Confirm that the option checkboxes match what you want
 5. Click **Preview** and read the report and enabled function summary in the right output panel
 6. If everything looks correct, click **Execute Swap** and confirm the dialog
 7. Test the save in-game:

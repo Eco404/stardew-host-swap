@@ -5,7 +5,7 @@
 一个用于 **《星露谷物语》1.6 版本多人联机存档主客身份互换** 的 Python 工具。
 
 当前项目实现了：  
-将联机存档中的某个客机角色与主机角色互换，同时尽量保留角色数据、存档预览信息，以及修复一部分关键的玩家归属关系。
+将联机存档中的某个客机角色与主机角色互换，同时尽量保留角色数据、存档预览信息，以及修复一部分关键的玩家归属关系与房屋内部内容。
 
 ## 开源协议
 
@@ -28,6 +28,7 @@
 - `homeLocation` 未修正导致联机角色列表不显示
 - `userID` 绑定问题
 - `farmhandReference` 归属引用未同步
+- Cabin / 主屋的 `indoors` 内容没有随角色正确迁移
 
 这个项目就是为了解决这些问题而写的。
 
@@ -44,6 +45,7 @@
 - 修复 `userID`
 - 修复部分基于 `UniqueMultiplayerID` 的归属字段：
   - `farmhandReference`
+- 交换并修复角色对应房屋的 `indoors` 内容
 - 支持 **预检查 / 报告模式**
 - 支持直接传入 **存档文件夹路径**
 - 支持 **原地修改原存档文件**
@@ -55,16 +57,18 @@
 
 ---
 
+## 软件截图
+
+![软件截图](src/screenshot_cn.png)
+
+---
+
 ## 使用方法
-
-### GUI（推荐）
-
-GUI 适合日常使用，能够更直观地查看角色列表、预检查结果和执行日志。
 
 #### 1. 启动 GUI
 
 ```bash
-python gui_main.py
+python main.py
 ```
 
 #### 2. 导入存档
@@ -93,7 +97,7 @@ name_123456789/
 导入完成后，界面会显示：
 
 - 当前主机名称与 ID
-- 可交换的客机角色列表（双列显示名称 / ID）
+- 可交换的客机角色列表（双列显示：名称 / ID）
 
 在左侧角色列表中选中一个需要与主机交换的客机角色。
 
@@ -104,10 +108,15 @@ name_123456789/
 - 基础信息交换（必选）
 - `homeLocation` 修复
 - `farmhandReference` 修复
-- 房屋内部修复（占位，尚未实现）
+- `indoors` 修复
 - `mailReceived` 修复
 - `userID` 修复
 - `SaveGameInfo` 同步
+
+其中：
+
+- `indoors` 修复当前已接入实际逻辑，默认勾选
+- 右侧输出框会显示当前已勾选功能的说明，便于确认实际执行内容
 
 #### 5. 预检查
 
@@ -125,75 +134,13 @@ name_123456789/
 - 备份原主存档为：`原文件名_bak`
 - 备份 `SaveGameInfo` 为：`SaveGameInfo_bak`
 - 将选定客机角色与主机角色进行交换
+- 根据当前勾选的功能执行对应修复
 - 将修改后的内容直接写回原存档文件
 
 #### 7. 恢复备份
 
 如果需要回滚，可点击“恢复备份”按钮。  
 该操作会用对应的 `_bak` 文件覆盖当前存档，并在恢复完成后删除这些 `_bak` 文件。
-
-### CLI
-
-<details>
-<summary>点击展开 CLI 用法</summary>
-
-#### 1. 准备环境
-
-需要：
-
-- Python 3.10 或更高版本
-- 一个《星露谷物语》联机存档文件夹，Windows 下一般位于 `%appdata%\StardewValley\Saves` 路径下
-
-典型存档目录结构如下：
-
-```text
-name_123456789/
-  name_123456789
-  SaveGameInfo
-```
-
-其中：
-
-- 文件夹名：`name_123456789`
-- 主存档文件：`name_123456789`
-- 预览信息文件：`SaveGameInfo`
-
-#### 2. 列出存档中的主机和所有客机角色
-
-```bash
-python main.py "\path\to\name_123456789" --list
-```
-
-#### 3. 预检查（推荐先执行）
-
-按角色名选择（`NAME` 是需要与当前主机交换数据的客机玩家名称）：
-
-```bash
-python main.py "\path\to\name_123456789" --target-name NAME --report
-```
-
-或按 `UniqueMultiplayerID` 选择（`ID` 是需要与当前主机交换数据的客机玩家 ID）：
-
-```bash
-python main.py "\path\to\name_123456789" --target-id ID --report
-```
-
-执行后将输出数据交换的修改结果，但不会进行实际文件操作。
-
-#### 4. 实际执行交换
-
-```bash
-python main.py "\path\to\name_123456789" --target-name NAME
-```
-
-执行该命令后会：
-
-- 备份原主存档为：`原文件名_bak`
-- 备份 `SaveGameInfo` 为：`SaveGameInfo_bak`
-- 将 `NAME` 客机玩家的数据与主机玩家的数据进行交换
-- 将修改后的内容写回原存档文件
-
-</details>
 
 ---
 
@@ -209,7 +156,7 @@ python main.py "\path\to\name_123456789" --target-name NAME
    - `player` 节点内部内容
    - 指定 `Farmer` 节点内部内容
 
-3. 在交换完成后，对以下字段做定点修复：
+3. 在交换完成后，根据当前启用的功能，对以下字段做定点修复：
    - `mailReceived`
    - `homeLocation`
    - `userID`
@@ -217,9 +164,11 @@ python main.py "\path\to\name_123456789" --target-name NAME
 4. 同步修复部分归属引用：
    - `farmhandReference`
 
-5. 将交换后的 `player` 内容同步写入 `SaveGameInfo/Farmer`
+5. 如启用 `indoors` 修复，则同步交换角色对应房屋的室内内容
 
-6. 在写回前自动备份原文件为 `_bak`
+6. 将交换后的 `player` 内容同步写入 `SaveGameInfo/Farmer`
+
+7. 在写回前自动备份原文件为 `_bak`
 
 ---
 
@@ -288,7 +237,12 @@ python main.py "\path\to\name_123456789" --target-name NAME
 - 原值是旧主机 ID → 写成旧客机 ID
 - 原值是旧客机 ID → 写成旧主机 ID
 
-### 7. 写入策略
+### 7. indoors 修复
+
+当前版本已实现 `indoors` 内容交换。  
+在主机 / 客机身份交换后，可以同步迁移双方对应房屋的室内内容，以使角色数据与房屋内部布局、物品内容保持更一致。
+
+### 8. 写入策略
 
 - 先备份主存档为 `原文件名_bak`
 - 如果存在 `SaveGameInfo`，先备份为 `SaveGameInfo_bak`
@@ -326,6 +280,7 @@ python main.py "\path\to\name_123456789" --target-name NAME
 - 角色可见性
 - 基础进度同步
 - 一部分归属关系
+- 房屋室内内容随角色迁移
 
 但还没有覆盖所有可能的多人 / 模组边角情况。
 
@@ -335,7 +290,6 @@ python main.py "\path\to\name_123456789" --target-name NAME
 
 - 尚未系统处理所有可能的 `UniqueMultiplayerID` 引用字段
 - 尚未专门适配模组自定义节点
-- 尚未迁移主屋 / Cabin 的室内家具与布局
 - 尚未对所有版本差异做兼容层
 
 ---
@@ -347,14 +301,15 @@ python main.py "\path\to\name_123456789" --target-name NAME
 1. 启动 `gui_main.py`
 2. 通过按钮或拖放方式导入存档文件夹
 3. 在左侧角色列表中选择需要交换的客机角色
-4. 确认功能复选框设置是否符合预期
-5. 点击“预检查”，阅读右侧输出区域中的报告
+4. 确认功能复选框设置是否符合预期，尤其是 `indoors` 修复是否按需启用
+5. 点击“预检查”，阅读右侧输出区域中的报告和已启用功能说明
 6. 确认无误后点击“执行交换”，并在确认弹窗中继续
 7. 进入游戏测试：
    - 是否能正常载入
    - 主机角色是否正确
    - 原主机是否出现在联机角色列表
    - 房屋和归属是否符合预期
+   - 室内物品与布局是否符合预期
 8. 如出现问题，可点击“恢复备份”回滚，或手动使用 `_bak` 文件恢复
 
 ---

@@ -59,13 +59,10 @@ def generate_report(
     lines.append(f"    basic swap: {options.basic_swap}")
     lines.append(f"    homeLocation fix: {options.fix_home_location}")
     lines.append(f"    farmhandReference fix: {options.fix_farmhand_reference}")
-    lines.append(f"    house interior fix: {options.fix_house_interior} (placeholder)")
+    lines.append(f"    house interior fix: {options.fix_house_interior}")
     lines.append(f"    mailReceived fix: {options.fix_mail_received}")
     lines.append(f"    userID fix: {options.fix_user_id}")
     lines.append(f"    SaveGameInfo sync: {options.sync_savegameinfo}")
-
-    if options.fix_house_interior:
-        lines.append("  Note: house interior fix is not implemented yet; checking it currently has no effect.")
 
     lines.append("  After swap: raw inner XML of /SaveGame/player and the target /SaveGame/farmhands/Farmer is exchanged.")
 
@@ -92,7 +89,7 @@ def generate_report(
     if options.sync_savegameinfo:
         fixes.append("SaveGameInfo sync")
     if options.fix_house_interior:
-        fixes.append("house interior (placeholder)")
+        fixes.append("house interior")
     lines.append(f"  Additional fixes: {', '.join(fixes)}.")
 
     if options.fix_home_location:

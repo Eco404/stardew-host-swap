@@ -56,7 +56,7 @@ EN_MAP: dict[tuple[str, str], str] = {
     ("MainWindow", "基础信息交换"): "Basic swap",
     ("MainWindow", "homeLocation 修复"): "Fix homeLocation",
     ("MainWindow", "farmhandReference 修复"): "Fix farmhandReference",
-    ("MainWindow", "房屋内部修复"): "Fix house interior",
+    ("MainWindow", "indoors 修复"): "Fix indoors",
     ("MainWindow", "mailReceived 修复"): "Fix mailReceived",
     ("MainWindow", "userID 修复"): "Fix userID",
     ("MainWindow", "SaveGameInfo 同步"): "Sync SaveGameInfo",
@@ -75,14 +75,11 @@ EN_MAP: dict[tuple[str, str], str] = {
     ("MainWindow", "备份已恢复，原文件已回滚到 _bak 版本，备份文件已删除。"): "Backup restored. Original files were rolled back to the _bak version, and backup files were removed.",
     ("MainWindow", "未选择角色"): "No character selected",
     ("MainWindow", "请先在左侧列表中选择一个客机角色。"): "Please select a farmhand from the list first.",
-    ("MainWindow", "未实现功能提示"): "Not implemented",
-    ("MainWindow", "“房屋内部修复”当前仅为占位菜单，勾选它不会执行实际修复。\n\n是否仍然继续？"): "The 'Fix house interior' option is currently only a placeholder and has no actual effect.\n\nContinue anyway?",
     ("MainWindow", "执行完成"): "Done",
     ("MainWindow", "交换已完成，原文件已原地修改，并生成了 _bak 备份。"): "Swap finished. Original files were modified in place and _bak backups were created.",
     ("MainWindow", "已导入存档文件夹："): "Loaded save folder: ",
     ("MainWindow", "主机："): "Host: ",
     ("MainWindow", "检测到客机角色数量："): "Detected farmhands: ",
-    ("MainWindow", "提示：房屋内部修复当前只是占位选项，尚未实现。"): "Hint: house interior fix is currently only a placeholder and not implemented.",
     ("MainWindow", "[错误] 导入失败："): "[Error] Load failed: ",
     ("MainWindow", "[错误] 预检查失败："): "[Error] Preview failed: ",
     ("MainWindow", "[错误] 执行失败："): "[Error] Swap failed: ",
@@ -90,10 +87,18 @@ EN_MAP: dict[tuple[str, str], str] = {
     ("MainWindow", "确认恢复"): "Confirm Restore",
     ("MainWindow", "这会用 *_bak 备份覆盖当前存档文件。\n\n是否继续？"): "This will overwrite current save files with *_bak backups.\n\nContinue?",
     ("MainWindow", "确认执行交换"): "Confirm Swap",
-    ("MainWindow", "这会直接修改当前存档文件，并创建 *_bak 备份。\n\n是否继续？"): "This will modify the current save files in place and create *_bak backups.\n\nContinue?",
+    ("MainWindow", "这会直接修改当前存档文件，并先创建 *_bak 备份。\n\n是否继续？"): "This will modify the current save files in place and create *_bak backups first.\n\nContinue?",
     ("MainWindow", "切换语言"): "Switch Language",
     ("MainWindow", "名称"): "Name",
     ("MainWindow", "ID"): "ID",
+    ("MainWindow", "当前已启用功能："): "Enabled features:",
+    ("MainWindow", "基础信息交换：交换主机 player 与目标 farmhand 的核心角色数据。"): "Basic swap: swaps the core character data between host player and the selected farmhand.",
+    ("MainWindow", "homeLocation 修复：让新主机回到 FarmHouse，并让新客机指向原小屋。"): "homeLocation fix: sends the new host back to FarmHouse and points the new farmhand to the original cabin.",
+    ("MainWindow", "farmhandReference 修复：同步小屋对联机玩家的绑定引用。"): "farmhandReference fix: updates cabin-to-farmhand binding references.",
+    ("MainWindow", "indoors 修复：交换主屋与目标小屋的室内对象、家具、墙纸和部分布局数据。"): "Indoors fix: swaps indoor objects, furniture, wallpaper, and part of the layout data between FarmHouse and the target cabin.",
+    ("MainWindow", "mailReceived 修复：按当前规则合并 / 回写邮件标志，尽量保留主机进度。"): "mailReceived fix: merges / writes back mail flags according to the current rule to preserve host progress as much as possible.",
+    ("MainWindow", "userID 修复：按主机 / 客机位置语义重新设置 userID。"): "userID fix: resets userID according to host / farmhand positional semantics.",
+    ("MainWindow", "SaveGameInfo 同步：将交换后的主机信息同步到 SaveGameInfo。"): "SaveGameInfo sync: writes the swapped host info back into SaveGameInfo.",
 }
 
 
@@ -112,6 +117,7 @@ class MainWindow(QMainWindow):
     def trctx(self, value: str) -> str:
         return QApplication.translate("MainWindow", value)
 
+    # Build the GUI once; later language switches only update text labels.
     def _build_ui(self) -> None:
         central = QWidget()
         self.setCentralWidget(central)
@@ -182,8 +188,7 @@ class MainWindow(QMainWindow):
         self.cb_farmref.setChecked(True)
 
         self.cb_interior = QCheckBox()
-        self.cb_interior.setChecked(False)
-        self.cb_interior.setEnabled(False)
+        self.cb_interior.setChecked(True)
 
         self.cb_mail = QCheckBox()
         self.cb_mail.setChecked(True)
@@ -236,10 +241,12 @@ class MainWindow(QMainWindow):
         bottom_bar.addWidget(self.swap_btn)
         right_col.addLayout(bottom_bar)
 
+        self._connect_option_signals()
         self._update_button_state()
 
     def toggle_language(self) -> None:
         self.set_language("en" if self.current_lang == "zh" else "zh")
+        self.reload_current_folder()
 
     def set_language(self, lang: str) -> None:
         app = QApplication.instance()
@@ -267,7 +274,7 @@ class MainWindow(QMainWindow):
         self.cb_basic.setText(self.trctx("基础信息交换"))
         self.cb_home.setText(self.trctx("homeLocation 修复"))
         self.cb_farmref.setText(self.trctx("farmhandReference 修复"))
-        self.cb_interior.setText(self.trctx("房屋内部修复"))
+        self.cb_interior.setText(self.trctx("indoors 修复"))
         self.cb_mail.setText(self.trctx("mailReceived 修复"))
         self.cb_user.setText(self.trctx("userID 修复"))
         self.cb_saveinfo.setText(self.trctx("SaveGameInfo 同步"))
@@ -461,6 +468,7 @@ class MainWindow(QMainWindow):
             return None, None
         return item.data(0, Qt.UserRole), item.data(0, Qt.UserRole + 1)
 
+    # Centralized option collection so GUI state maps cleanly to the service layer.
     def _options(self) -> SwapOptions:
         return SwapOptions(
             basic_swap=True,
@@ -471,6 +479,78 @@ class MainWindow(QMainWindow):
             fix_user_id=self.cb_user.isChecked(),
             sync_savegameinfo=self.cb_saveinfo.isChecked(),
         )
+
+    # Human-readable descriptions for the currently enabled options shown in the output panel.
+    def _enabled_feature_descriptions(self) -> list[str]:
+        descriptions = [self.trctx("基础信息交换：交换主机 player 与目标 farmhand 的核心角色数据。")]
+        if self.cb_home.isChecked():
+            descriptions.append(self.trctx("homeLocation 修复：让新主机回到 FarmHouse，并让新客机指向原小屋。"))
+        if self.cb_farmref.isChecked():
+            descriptions.append(self.trctx("farmhandReference 修复：同步小屋对联机玩家的绑定引用。"))
+        if self.cb_interior.isChecked():
+            descriptions.append(self.trctx("indoors 修复：交换主屋与目标小屋的室内对象、家具、墙纸和部分布局数据。"))
+        if self.cb_mail.isChecked():
+            descriptions.append(self.trctx("mailReceived 修复：按当前规则合并 / 回写邮件标志，尽量保留主机进度。"))
+        if self.cb_user.isChecked():
+            descriptions.append(self.trctx("userID 修复：按主机 / 客机位置语义重新设置 userID。"))
+        if self.cb_saveinfo.isChecked():
+            descriptions.append(self.trctx("SaveGameInfo 同步：将交换后的主机信息同步到 SaveGameInfo。"))
+        return descriptions
+
+    def _append_enabled_features(self) -> None:
+        self._append(self.trctx("当前已启用功能："))
+        for desc in self._enabled_feature_descriptions():
+            self._append(f"• {desc}")
+
+
+    def _connect_option_signals(self) -> None:
+        """Connect option checkbox changes to instant output refresh."""
+        boxes = [
+            self.cb_home,
+            self.cb_farmref,
+            self.cb_interior,
+            self.cb_mail,
+            self.cb_user,
+            self.cb_saveinfo,
+        ]
+        for box in boxes:
+            box.toggled.connect(self.refresh_output_for_current_state)
+
+    def _on_selection_changed(self) -> None:
+        """Refresh button state and report/output when the selected farmhand changes."""
+        self._update_button_state()
+        self.refresh_output_for_current_state()
+
+    def refresh_output_for_current_state(self) -> None:
+        """
+        Refresh the right-side output panel to match the current GUI state.
+
+        Behavior:
+        - If no save is loaded: do nothing.
+        - If a save is loaded but no farmhand is selected: show the loaded save summary
+          and currently enabled features.
+        - If a farmhand is selected: regenerate the current preview report immediately.
+        """
+        if self.current_resolved is None:
+            return
+
+        try:
+            root = parse_root(self.current_resolved.main_save_in)
+            player = root.find("player")
+
+            self._clear_output()
+            self._append(f"{self.trctx('已导入存档文件夹：')}{self.current_folder}")
+            if player is not None:
+                self._append(
+                    f"{self.trctx('主机：')}{text(player.find('name'))}  |  ID: {text(player.find('UniqueMultiplayerID'))}"
+                )
+            self._append(f"{self.trctx('检测到客机角色数量：')}{self.player_list.topLevelItemCount()}")
+            self._append("")
+            self._append_enabled_features()
+
+        except Exception as exc:
+            self._clear_output()
+            self._append(f"{self.trctx('[错误] 导入失败：')}{exc}")
 
     def _update_button_state(self) -> None:
         ready = self.current_folder is not None
@@ -489,6 +569,7 @@ class MainWindow(QMainWindow):
         if self.current_folder is not None:
             self.load_folder(str(self.current_folder))
 
+    # Load save metadata into the GUI and refresh the right output panel summary.
     def load_folder(self, folder: str) -> None:
         try:
             path = Path(folder)
@@ -528,12 +609,10 @@ class MainWindow(QMainWindow):
                 item.setData(0, Qt.UserRole + 1, mpid)
                 self.player_list.addTopLevelItem(item)
 
-            self._clear_output()
-            self._append(f"{self.trctx('已导入存档文件夹：')}{path}")
-            self._append(f"{self.trctx('主机：')}{text(player.find('name'))}  |  ID: {text(player.find('UniqueMultiplayerID'))}")
-            self._append(f"{self.trctx('检测到客机角色数量：')}{self.player_list.topLevelItemCount()}")
-            if self.cb_interior.isChecked():
-                self._append(self.trctx("提示：房屋内部修复当前只是占位选项，尚未实现。"))
+            self.player_list.resizeColumnToContents(0)
+            self.player_list.resizeColumnToContents(1)
+
+            self.refresh_output_for_current_state()
         except Exception as exc:
             QMessageBox.critical(self, self.trctx("导入失败"), str(exc))
             self._append(f"{self.trctx('[错误] 导入失败：')}{exc}")
@@ -562,6 +641,8 @@ class MainWindow(QMainWindow):
                 options=self._options(),
             )
             self._clear_output()
+            self._append_enabled_features()
+            self._append("")
             self._append(report)
         except Exception as exc:
             QMessageBox.critical(self, self.trctx("预检查失败"), str(exc))
@@ -588,15 +669,6 @@ class MainWindow(QMainWindow):
         if ret != QMessageBox.StandardButton.Yes:
             return
 
-        if self.cb_interior.isChecked():
-            ret = QMessageBox.question(
-                self,
-                self.trctx("未实现功能提示"),
-                self.trctx("“房屋内部修复”当前仅为占位菜单，勾选它不会执行实际修复。\n\n是否仍然继续？"),
-            )
-            if ret != QMessageBox.StandardButton.Yes:
-                return
-
         try:
             buf = io.StringIO()
             with redirect_stdout(buf):
@@ -610,6 +682,8 @@ class MainWindow(QMainWindow):
                     options=self._options(),
                 )
             self._clear_output()
+            self._append_enabled_features()
+            self._append("")
             self._append(buf.getvalue().strip())
             QMessageBox.information(
                 self,

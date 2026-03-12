@@ -2,10 +2,10 @@
 
 English | [中文](README.md)
 
-A Python tool for **swapping the host and farmhand identities in Stardew Valley 1.6 multiplayer saves**.
+A Python tool for **swapping host and farmhand identities in Stardew Valley 1.6 multiplayer saves**.
 
 The current project implements:  
-Swapping a selected farmhand character with the host character in a multiplayer save, while preserving as much player data, save preview information, and key ownership relationships as possible.
+Swapping a selected farmhand character with the host character in a multiplayer save, while preserving as much player data, save preview information, and key ownership relationships and indoor house content as possible.
 
 ## License
 
@@ -28,6 +28,7 @@ After a direct swap, you will often run into issues such as:
 - Missing multiplayer character selection entries due to incorrect `homeLocation`
 - `userID` binding issues
 - Unsynchronized ownership references such as `farmhandReference`
+- Cabin / farmhouse `indoors` content not being migrated correctly with the player
 
 This project was written to address those problems.
 
@@ -44,6 +45,7 @@ The current version supports:
 - Fixing `userID`
 - Fixing part of the ownership fields based on `UniqueMultiplayerID`:
   - `farmhandReference`
+- Swapping and fixing the corresponding house `indoors` content
 - Supporting **pre-check / report mode**
 - Supporting direct input of the **save folder path**
 - Supporting **in-place modification of the original save files**
@@ -55,16 +57,18 @@ The current version supports:
 
 ---
 
+## Screenshot
+
+![Screenshot](src/screenshot_en.png)
+
+---
+
 ## Usage
-
-### GUI (Recommended)
-
-The GUI is recommended for daily use. It makes it easier to inspect characters, review reports, and execute swaps safely.
 
 #### 1. Launch the GUI
 
 ```bash
-python gui_main.py
+python main.py
 ```
 
 #### 2. Import a save
@@ -104,10 +108,15 @@ The GUI currently provides these toggleable options:
 - Basic swap (required)
 - `homeLocation` fix
 - `farmhandReference` fix
-- House interior fix (placeholder, not implemented yet)
+- `indoors` fix
 - `mailReceived` fix
 - `userID` fix
 - `SaveGameInfo` sync
+
+Notes:
+
+- The `indoors` fix is now fully connected to actual logic and is enabled by default
+- The right-side output panel shows a summary of the currently enabled functions for easier verification
 
 #### 5. Run a preview
 
@@ -126,75 +135,13 @@ After confirmation, the program will:
 - Back up the original main save as `original_filename_bak`
 - Back up `SaveGameInfo` as `SaveGameInfo_bak`
 - Swap the selected farmhand with the host
+- Execute the fixes corresponding to the currently enabled options
 - Write the modified content back to the original save files
 
 #### 7. Restore backups
 
 If you want to roll back the changes, click **Restore Backup**.  
 This will overwrite the current save files with the corresponding `_bak` files and then delete those `_bak` files after restoration.
-
-### CLI
-
-<details>
-<summary>Click to expand CLI usage</summary>
-
-#### 1. Requirements
-
-You need:
-
-- Python 3.10 or higher
-- A Stardew Valley multiplayer save folder. On Windows, it is usually located under `%appdata%\StardewValley\Saves`
-
-A typical save directory looks like this:
-
-```text
-name_123456789/
-  name_123456789
-  SaveGameInfo
-```
-
-Where:
-
-- Folder name: `name_123456789`
-- Main save file: `name_123456789`
-- Preview info file: `SaveGameInfo`
-
-#### 2. List the host and all farmhand characters in the save
-
-```bash
-python main.py "\path\to\name_123456789" --list
-```
-
-#### 3. Run a pre-check first (recommended)
-
-Select by character name (`NAME` is the farmhand player name that you want to swap with the current host):
-
-```bash
-python main.py "\path\to\name_123456789" --target-name NAME --report
-```
-
-Or select by `UniqueMultiplayerID` (`ID` is the farmhand player ID that you want to swap with the current host):
-
-```bash
-python main.py "\path\to\name_123456789" --target-id ID --report
-```
-
-This will output the planned swap results, but will not modify any actual files.
-
-#### 4. Perform the actual swap
-
-```bash
-python main.py "\path\to\name_123456789" --target-name NAME
-```
-
-After running the command, the tool will:
-
-- Back up the original main save as `original_filename_bak`
-- Back up `SaveGameInfo` as `SaveGameInfo_bak`
-- Swap the data of the farmhand player `NAME` with the current host player
-- Write the modified content back to the original save files
-
-</details>
 
 ---
 
@@ -210,7 +157,7 @@ The current processing flow is roughly:
    - The internal content of the `player` node
    - The internal content of the specified `Farmer` node
 
-3. After the swap, apply targeted fixes to:
+3. After the swap, apply targeted fixes according to the currently enabled options:
    - `mailReceived`
    - `homeLocation`
    - `userID`
@@ -218,9 +165,11 @@ The current processing flow is roughly:
 4. Synchronize some ownership references:
    - `farmhandReference`
 
-5. Write the swapped `player` content into `SaveGameInfo/Farmer`
+5. If `indoors` fix is enabled, also swap the indoor house content corresponding to the two players
 
-6. Automatically back up the original files as `_bak` before writing changes
+6. Write the swapped `player` content into `SaveGameInfo/Farmer`
+
+7. Automatically back up the original files as `_bak` before writing changes
 
 ---
 
@@ -289,7 +238,12 @@ It checks each matched tag value and swaps based on the original value:
 - Old host ID → old farmhand ID
 - Old farmhand ID → old host ID
 
-### 7. Write strategy
+### 7. indoors fix
+
+The current version implements `indoors` content swapping.  
+After the host / farmhand identity swap, it can also migrate the interior content of the corresponding houses so that player data and indoor layout / items stay more consistent.
+
+### 8. Write strategy
 
 - Back up the main save as `original_filename_bak`
 - If `SaveGameInfo` exists, back it up as `SaveGameInfo_bak`
@@ -327,6 +281,7 @@ The current tool mainly focuses on:
 - Character visibility
 - Basic progress preservation
 - Part of the ownership relationships
+- Indoor house content migration with the player
 
 It does not yet cover every multiplayer / mod edge case.
 
@@ -336,7 +291,6 @@ It does not yet cover every multiplayer / mod edge case.
 
 - Not all possible `UniqueMultiplayerID` reference fields are handled yet
 - Mod-specific custom nodes are not specially supported yet
-- Interior furniture / layout migration for the main house and cabins is not implemented yet
 - No full compatibility layer for every save format variation yet
 
 ---
@@ -348,14 +302,15 @@ Recommended GUI workflow:
 1. Start `gui_main.py`
 2. Import the save folder using the button or by dragging it into the window
 3. Select the farmhand character you want to swap in the left-side list
-4. Confirm that the option checkboxes match what you want
-5. Click **Preview** and read the report in the right output panel
+4. Confirm that the option checkboxes match what you want, especially whether `indoors` fix should be enabled
+5. Click **Preview** and read the report and enabled function summary in the right output panel
 6. If everything looks correct, click **Execute Swap** and confirm the dialog
 7. Test the save in-game:
    - Does it load successfully?
    - Is the host character correct?
    - Does the old host appear in the multiplayer character selection list?
    - Are housing and ownership relationships correct?
+   - Are interior items and layouts correct?
 8. If something goes wrong, use **Restore Backup** or manually restore from the `_bak` files
 
 ---

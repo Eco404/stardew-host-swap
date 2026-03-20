@@ -46,14 +46,12 @@ The current version supports:
 - Fixing part of the ownership fields based on `UniqueMultiplayerID`:
   - `farmhandReference`
 - Swapping and fixing the corresponding house `indoors` content
-- Supporting **pre-check / report mode**
-- Supporting direct input of the **save folder path**
-- Supporting **in-place modification of the original save files**
 - Automatically creating `_bak` backup files
-- Providing a **PySide6 GUI**
-- Supporting **drag-and-drop of save folders anywhere in the window**
-- Supporting **Chinese / English UI switching**
 - Supporting **restoring from `_bak` backups**
+- Supporting **drag-and-drop of save folders anywhere in the window**
+- Supporting **pre-check / report mode**
+- Providing a **PySide6 GUI**
+- Supporting **Chinese / English UI switching**
 
 ---
 
@@ -235,8 +233,41 @@ It checks each matched tag value and swaps based on the original value:
 
 ### 7. indoors fix
 
-The current version implements `indoors` content swapping.  
-After the host / farmhand identity swap, it can also migrate the interior content of the corresponding houses so that player data and indoor layout / items stay more consistent.
+The current `indoors` fix does **not** swap the entire `FarmHouse` node with the farmhand cabin `indoors` node.  
+Instead, it uses a **“keep the house identity node, swap only the indoor content children”** strategy.
+
+The process is roughly:
+
+1. After the main host / farmhand player swap is completed, the program first records the target farmhand’s original `homeLocation`
+2. It then locates the following nodes under `SaveGame/locations`:
+   - Main house: `GameLocation[name=FarmHouse]`
+   - Target farmhand’s original cabin: `GameLocation[name=Farm] / buildings / Building / indoors`
+3. It matches the target cabin by comparing the farmhand’s pre-swap `homeLocation` with `indoors/uniqueName`
+4. It swaps only the child nodes related to indoor layout and contents, instead of swapping the entire house nodes
+
+It is important to note that:
+
+- `FarmHouse` and `Cabin/indoors` do not have identical structures
+- `Cabin/indoors` also contains ownership-related fields such as:
+  - `uniqueName`
+  - `farmhandReference`
+- Swapping the full house nodes directly can easily break house type semantics and player ownership bindings
+
+Therefore, the following fields are intentionally kept on their original house nodes and are **not** swapped:
+
+- `name`
+- `isStructure`
+- `uniqueName`
+- `farmhandReference`
+
+In other words, the goal of the current `indoors` fix is to:
+
+- Make the new host see the original target farmhand’s indoor items and layout after moving into `FarmHouse`
+- Make the downgraded original host see the original `FarmHouse` indoor items and layout after moving into the target cabin
+- Preserve the original `Cabin` ↔ farmhand binding structure as much as possible
+
+Implementation-wise, the core host / farmhand player swap still uses raw inner-XML replacement;  
+the `indoors` fix, however, uses `ElementTree` to perform targeted subtree swaps on the parsed XML tree.
 
 ### 8. Write strategy
 
@@ -294,7 +325,7 @@ It does not yet cover every multiplayer / mod edge case.
 
 Recommended GUI workflow:
 
-1. Start `gui_main.py`
+1. Start `main.py`
 2. Import the save folder using the button or by dragging it into the window
 3. Select the farmhand character you want to swap in the left-side list
 4. Confirm that the option checkboxes match what you want
